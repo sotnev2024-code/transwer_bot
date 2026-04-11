@@ -18,6 +18,7 @@ from shared.database import (
     get_route_by_id,
     upsert_route,
     delete_route,
+    export_prices_json,
 )
 from tg_bot.keyboards import (
     admin_settings_menu_kb,
@@ -465,6 +466,7 @@ async def route_add_price(message: Message, state: FSMContext) -> None:
         return
     data = await state.get_data()
     await upsert_route(data["new_route_from"], data["new_route_to"], price)
+    await export_prices_json()
     await state.clear()
     await message.answer(
         f"✅ Маршрут <b>{data['new_route_from']} → {data['new_route_to']}</b> "
@@ -512,6 +514,7 @@ async def route_edit_receive(message: Message, state: FSMContext) -> None:
     route = await get_route_by_id(route_id)
     if route:
         await upsert_route(route["from_city"], route["to_city"], price)
+    await export_prices_json()
     await state.clear()
     await message.answer(f"✅ Цена маршрута обновлена: <b>{price:,} ₽</b>")
     await _show_routes_page(message, 0)
@@ -527,6 +530,7 @@ async def route_delete(callback: CallbackQuery) -> None:
         return
     route_id = int(callback.data.split(":")[-1])
     await delete_route(route_id)
+    await export_prices_json()
     await callback.answer("🗑 Маршрут удалён", show_alert=True)
     await _show_routes_page(callback, 0)
 

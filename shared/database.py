@@ -584,6 +584,41 @@ async def get_routes_paginated(page: int = 0, per_page: int = 8) -> tuple[list[d
         return rows, total
 
 
+async def export_prices_json() -> None:
+    """Экспортирует активные маршруты в prices.json для лендинга.
+
+    Файл создаётся по пути PRICES_JSON_PATH из .env.
+    Формат: {"routes": [{"from": "Барнаул", "to": "Горно-Алтайск", "price": 7800}, ...]}
+    Вызывается автоматически после любого изменения маршрутов в админке.
+    """
+    import json
+    import asyncio
+    from shared.config import PRICES_JSON_PATH
+    if not PRICES_JSON_PATH:
+        return
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute(
+            "SELECT from_city, to_city, price FROM route_prices WHERE is_active = 1 ORDER BY from_city, to_city"
+        ) as cur:
+            rows = await cur.fetchall()
+    data = {
+        "routes": [
+            {"from": r["from_city"], "to": r["to_city"], "price": r["price"]}
+            for r in rows
+        ]
+    }
+    path = PRICES_JSON_PATH
+    # Запись в файл в отдельном потоке чтобы не блокировать event loop
+    def _write():
+        import tempfile, os
+        tmp = path + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        os.replace(tmp, path)
+    await asyncio.get_event_loop().run_in_executor(None, _write)
+
+
 async def get_all_users_for_export() -> list[dict]:
     async with aiosqlite.connect(DB_PATH) as db:
         db.row_factory = aiosqlite.Row

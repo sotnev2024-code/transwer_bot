@@ -27,6 +27,11 @@ MAX_ADMIN_IDS: list[int] = [
 # ── Прокси (опционально) ──
 PROXY_URL: str = os.getenv("PROXY_URL", "")
 
+# ── Лендинг (опционально) ──
+# Путь к prices.json на сервере. Бот пересоздаёт файл при каждом изменении маршрута.
+# На VPS: /var/www/altayprimetransfer/prices.json
+PRICES_JSON_PATH: str = os.getenv("PRICES_JSON_PATH", "")
+
 # ── База ──
 # По умолчанию — transfer_bot.db в корне проекта.
 # Можно переопределить абсолютным путём через DB_PATH в .env.

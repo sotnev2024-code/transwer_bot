@@ -807,7 +807,7 @@ a, button, [role="button"], input, select, textarea {
                 258 км
               </span>
             </div>
-            <p class="route-card__price">от <strong>7 800 ₽</strong></p>
+            <p class="route-card__price" data-route-from="Барнаул" data-route-to="Горно-Алтайск">от <strong>7 800 ₽</strong></p>
             <a href="#calc" class="btn btn--primary btn--sm">Рассчитать</a>
           </div>
           <div class="route-card__badge">Популярный</div>
@@ -832,7 +832,7 @@ a, button, [role="button"], input, select, textarea {
             <span class="route-meta-item">~3 часа</span>
             <span class="route-meta-item">226 км</span>
           </div>
-          <p class="route-card__price">от <strong>6 800 ₽</strong></p>
+          <p class="route-card__price" data-route-from="Барнаул" data-route-to="Белокуриха">от <strong>6 800 ₽</strong></p>
           <a href="#calc" class="btn btn--outline btn--sm">Рассчитать</a>
         </article>
 
@@ -855,7 +855,7 @@ a, button, [role="button"], input, select, textarea {
             <span class="route-meta-item">~2.5 часа</span>
             <span class="route-meta-item">159 км</span>
           </div>
-          <p class="route-card__price">от <strong>4 800 ₽</strong></p>
+          <p class="route-card__price" data-route-from="Барнаул" data-route-to="Бийск">от <strong>4 800 ₽</strong></p>
           <a href="#calc" class="btn btn--outline btn--sm">Рассчитать</a>
         </article>
 
@@ -878,7 +878,7 @@ a, button, [role="button"], input, select, textarea {
             <span class="route-meta-item">~5 часов</span>
             <span class="route-meta-item">342 км</span>
           </div>
-          <p class="route-card__price">от <strong>10 500 ₽</strong></p>
+          <p class="route-card__price" data-route-from="Барнаул" data-route-to="Чемал">от <strong>10 500 ₽</strong></p>
           <a href="#calc" class="btn btn--outline btn--sm">Рассчитать</a>
         </article>
 
@@ -901,7 +901,7 @@ a, button, [role="button"], input, select, textarea {
             <span class="route-meta-item">~4 часа</span>
             <span class="route-meta-item">280 км</span>
           </div>
-          <p class="route-card__price">от <strong>8 500 ₽</strong></p>
+          <p class="route-card__price" data-route-from="Барнаул" data-route-to="Манжерок">от <strong>8 500 ₽</strong></p>
           <a href="#calc" class="btn btn--outline btn--sm">Рассчитать</a>
         </article>
 
@@ -924,7 +924,7 @@ a, button, [role="button"], input, select, textarea {
             <span class="route-meta-item">~6.5 часов</span>
             <span class="route-meta-item">465 км</span>
           </div>
-          <p class="route-card__price">от <strong>14 000 ₽</strong></p>
+          <p class="route-card__price" data-route-from="Барнаул" data-route-to="Телецкое озеро">от <strong>14 000 ₽</strong></p>
           <a href="#calc" class="btn btn--outline btn--sm">Рассчитать</a>
         </article>
 
@@ -947,7 +947,7 @@ a, button, [role="button"], input, select, textarea {
             <span class="route-meta-item">~4.5 часа</span>
             <span class="route-meta-item">300 км</span>
           </div>
-          <p class="route-card__price">от <strong>9 000 ₽</strong></p>
+          <p class="route-card__price" data-route-from="Барнаул" data-route-to="Бирюзовая Катунь">от <strong>9 000 ₽</strong></p>
           <a href="#calc" class="btn btn--outline btn--sm">Рассчитать</a>
         </article>
 
@@ -970,7 +970,7 @@ a, button, [role="button"], input, select, textarea {
             <span class="route-meta-item">~4 часа</span>
             <span class="route-meta-item">266 км</span>
           </div>
-          <p class="route-card__price">от <strong>8 000 ₽</strong></p>
+          <p class="route-card__price" data-route-from="Барнаул" data-route-to="Соузга">от <strong>8 000 ₽</strong></p>
           <a href="#calc" class="btn btn--outline btn--sm">Рассчитать</a>
         </article>
 
@@ -993,7 +993,7 @@ a, button, [role="button"], input, select, textarea {
             <span class="route-meta-item">~4 часа</span>
             <span class="route-meta-item">285 км</span>
           </div>
-          <p class="route-card__price">от <strong>8 550 ₽</strong></p>
+          <p class="route-card__price" data-route-from="Барнаул" data-route-to="Ая">от <strong>8 550 ₽</strong></p>
           <a href="#calc" class="btn btn--outline btn--sm">Рассчитать</a>
         </article>
 
@@ -1016,7 +1016,7 @@ a, button, [role="button"], input, select, textarea {
             <span class="route-meta-item">~3.5 часа</span>
             <span class="route-meta-item">233 км</span>
           </div>
-          <p class="route-card__price">от <strong>7 000 ₽</strong></p>
+          <p class="route-card__price" data-route-from="Барнаул" data-route-to="Новосибирск">от <strong>7 000 ₽</strong></p>
           <a href="#calc" class="btn btn--outline btn--sm">Рассчитать</a>
         </article>
 
@@ -1622,6 +1622,31 @@ document.querySelectorAll('a[href^="#"]').forEach(link => {
     }
   });
 });
+  </script>
+
+  <script>
+  // Загружаем цены из prices.json (генерируется ботом при изменении маршрутов)
+  (function () {
+    function fmt(n) {
+      return n.toLocaleString('ru-RU') + '\u00a0₽';
+    }
+    fetch('/prices.json?_=' + Date.now())
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (data) {
+        if (!data || !Array.isArray(data.routes)) return;
+        var map = {};
+        data.routes.forEach(function (r) {
+          map[r.from + '|' + r.to] = r.price;
+        });
+        document.querySelectorAll('[data-route-from][data-route-to]').forEach(function (el) {
+          var key = el.dataset.routeFrom + '|' + el.dataset.routeTo;
+          if (map[key] !== undefined) {
+            el.innerHTML = 'от <strong>' + fmt(map[key]) + '</strong>';
+          }
+        });
+      })
+      .catch(function () { /* prices.json не найден — показываем статичные цены */ });
+  })();
   </script>
 </body>
 </html>
