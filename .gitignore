@@ -1,0 +1,35 @@
+# Секреты — никогда не коммитить
+.env
+.env.*
+!.env.example
+
+# Python-венвы
+.venv/
+.venv2/
+venv/
+env/
+
+# Байткод и кеши
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+
+# IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# Локальные БД и логи
+*.db
+*.sqlite
+*.sqlite3
+*.log
+
+# matplotlib временные файлы
+*.png.tmp
+
+# Claude Code локальные настройки
+.claude/

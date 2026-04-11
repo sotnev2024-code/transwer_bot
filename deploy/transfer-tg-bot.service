@@ -1,0 +1,27 @@
+[Unit]
+Description=Altai Transfer Telegram Bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=botuser
+Group=botuser
+WorkingDirectory=/opt/transfer_bot
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/opt/transfer_bot/.venv/bin/python -m tg_bot.bot
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=transfer-tg-bot
+
+# Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/transfer_bot
+
+[Install]
+WantedBy=multi-user.target
