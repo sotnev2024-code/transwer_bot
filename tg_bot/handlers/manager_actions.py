@@ -8,14 +8,12 @@
 """
 
 from aiogram import Router, F, Bot
-from aiogram.types import CallbackQuery, Message
-from aiogram.fsm.context import FSMContext
-from aiogram.filters import StateFilter
+from aiogram.types import CallbackQuery
 
 from shared import settings_store
-from shared.database import get_order_by_id, update_order_status, update_order_final_price
+from shared.database import get_order_by_id, update_order_status, update_order_final_price, save_inbox_link
 from shared.notifier import send_user_message
-from tg_bot.states import ManagerPriceStates
+from shared.config import MANAGER_CHAT_ID
 
 router = Router()
 
@@ -104,7 +102,7 @@ async def manager_contact(callback: CallbackQuery) -> None:
 
 
 @router.callback_query(F.data.startswith("mgr_set_price:"))
-async def manager_set_price_start(callback: CallbackQuery, state: FSMContext) -> None:
+async def manager_set_price_start(callback: CallbackQuery, bot: Bot) -> None:
     order_id = int(callback.data.split(":", 1)[1])
     order = await get_order_by_id(order_id)
     if not order:
@@ -114,56 +112,24 @@ async def manager_set_price_start(callback: CallbackQuery, state: FSMContext) ->
     calc = order.get("calculated_price") or 0
     calc_line = f"\nПредварительная: <b>{calc:,} ₽</b>" if calc else ""
 
-    await state.set_state(ManagerPriceStates.waiting_price)
-    await state.update_data(order_id=order_id)
-
-    await callback.message.answer(
+    sent = await bot.send_message(
+        MANAGER_CHAT_ID,
         f"💰 <b>Установка цены — Заказ #{order_id}</b>\n\n"
         f"📍 {order['from_city']} → {order['to_city']}\n"
         f"📅 {order['trip_date']} в {order['trip_time']}\n"
         f"👥 Пассажиров: {order['passengers']}"
         f"{calc_line}\n\n"
-        "Введите <b>финальную стоимость</b> (только цифры, в рублях):",
+        "↩️ <b>Ответьте реплаем на это сообщение</b> с финальной ценой (только цифры, в рублях):",
+    )
+    await save_inbox_link(
+        chat_id=MANAGER_CHAT_ID,
+        message_id=sent.message_id,
+        user_id=order["telegram_id"],
+        platform=order.get("platform", "telegram"),
+        kind="price_request",
+        label=str(order_id),
     )
     await callback.answer()
-
-
-@router.message(StateFilter(ManagerPriceStates.waiting_price))
-async def manager_set_price_input(message: Message, state: FSMContext, bot: Bot) -> None:
-    text = message.text.strip() if message.text else ""
-    if not text.isdigit() or int(text) <= 0:
-        await message.answer("❌ Введите корректную сумму (целое число больше 0):")
-        return
-
-    final_price = int(text)
-    data = await state.get_data()
-    order_id = data["order_id"]
-    await state.clear()
-
-    await update_order_final_price(order_id, final_price)
-    order = await get_order_by_id(order_id)
-
-    # Уведомляем клиента с финальной ценой — через cross-platform notifier
-    if order:
-        await send_user_message(
-            user_id=order["telegram_id"],
-            platform=order.get("platform", "telegram"),
-            text=(
-                f"✅ <b>Заказ #{order_id} подтверждён!</b>\n\n"
-                f"📍 {order['from_city']} → {order['to_city']}\n"
-                f"📅 {order['trip_date']} в {order['trip_time']}\n"
-                f"👥 Пассажиров: {order['passengers']}\n\n"
-                f"💰 <b>Финальная стоимость: {final_price:,} ₽</b>\n\n"
-                "Водитель свяжется с вами накануне поездки. Ждём вас! 🚗"
-            ),
-        )
-
-    manager_name = message.from_user.username or message.from_user.first_name or "менеджер"
-    platform_name = (order.get("platform", "telegram") if order else "telegram").upper()
-    await message.answer(
-        f"✅ Цена <b>{final_price:,} ₽</b> установлена.\n"
-        f"Заказ <b>#{order_id}</b> ({platform_name}) подтверждён, клиент уведомлён. (@{manager_name})"
-    )
 
 
 def _platform_badge(order: dict | None) -> str:

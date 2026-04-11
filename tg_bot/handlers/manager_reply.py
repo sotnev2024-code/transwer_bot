@@ -24,7 +24,7 @@ from aiogram import Router, F, Bot
 from aiogram.types import Message
 
 from shared.config import MANAGER_CHAT_ID, ADMIN_IDS
-from shared.database import get_inbox_link
+from shared.database import get_inbox_link, update_order_final_price, get_order_by_id
 from shared.notifier import send_user_message
 
 router = Router()
@@ -71,7 +71,12 @@ async def on_manager_reply(message: Message, bot: Bot) -> None:
             pass
         return
 
-    # 5) Доставка клиенту
+    # 5) Если это запрос на установку цены — обрабатываем отдельно
+    if link.get("kind") == "price_request":
+        await _handle_price_reply(message, link)
+        return
+
+    # 6) Доставка клиенту
     target_user_id = link["user_id"]
     target_platform = link["platform"]
     label = link.get("label") or ""
@@ -116,3 +121,47 @@ async def on_manager_reply(message: Message, bot: Bot) -> None:
             )
     except Exception as e:
         logger.warning("Не удалось подтвердить менеджеру: %s", e)
+
+
+async def _handle_price_reply(message: Message, link: dict) -> None:
+    """Обрабатывает реплай менеджера на запрос установки цены."""
+    text = (message.text or "").strip()
+    if not text.isdigit() or int(text) <= 0:
+        try:
+            await message.reply("❌ Укажите корректную сумму — только цифры, больше 0. Попробуйте ещё раз реплаем.")
+        except Exception:
+            pass
+        return
+
+    final_price = int(text)
+    order_id = int(link.get("label", 0))
+    if not order_id:
+        await message.reply("⚠️ Не удалось определить номер заказа.")
+        return
+
+    await update_order_final_price(order_id, final_price)
+    order = await get_order_by_id(order_id)
+
+    if order:
+        await send_user_message(
+            user_id=order["telegram_id"],
+            platform=order.get("platform", "telegram"),
+            text=(
+                f"✅ <b>Заказ #{order_id} подтверждён!</b>\n\n"
+                f"📍 {order['from_city']} → {order['to_city']}\n"
+                f"📅 {order['trip_date']} в {order['trip_time']}\n"
+                f"👥 Пассажиров: {order['passengers']}\n\n"
+                f"💰 <b>Финальная стоимость: {final_price:,} ₽</b>\n\n"
+                "Водитель свяжется с вами накануне поездки. Ждём вас! 🚗"
+            ),
+        )
+
+    manager_name = message.from_user.username or message.from_user.first_name or "менеджер"
+    platform_name = (order.get("platform", "telegram") if order else "telegram").upper()
+    try:
+        await message.reply(
+            f"✅ Цена <b>{final_price:,} ₽</b> установлена.\n"
+            f"Заказ <b>#{order_id}</b> ({platform_name}) подтверждён, клиент уведомлён. (@{manager_name})"
+        )
+    except Exception as e:
+        logger.warning("Не удалось подтвердить менеджеру цену: %s", e)
