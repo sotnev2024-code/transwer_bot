@@ -30,18 +30,15 @@ from shared.notifier import send_user_message
 router = Router()
 logger = logging.getLogger(__name__)
 
-
-def _is_manager_chat(chat_id: int) -> bool:
-    """Сообщения принимаем только из чата менеджера."""
-    return MANAGER_CHAT_ID and chat_id == MANAGER_CHAT_ID
+# Фильтр на уровне роутера: обрабатываем только сообщения из чата менеджера.
+# Это критично — без него роутер перехватывал бы reply-сообщения из приватных чатов
+# пользователей и блокировал FSM-хендлеры бронирования.
+if MANAGER_CHAT_ID:
+    router.message.filter(F.chat.id == MANAGER_CHAT_ID)
 
 
 @router.message(F.reply_to_message)
 async def on_manager_reply(message: Message, bot: Bot) -> None:
-    # 1) Только в чате менеджера
-    if not _is_manager_chat(message.chat.id):
-        return
-
     # 2) Reply должен быть на сообщение БОТА (не на чужое)
     src = message.reply_to_message
     if not src or not src.from_user or not src.from_user.is_bot:
