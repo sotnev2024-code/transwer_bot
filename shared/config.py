@@ -24,6 +24,9 @@ MAX_ADMIN_IDS: list[int] = [
     int(x.strip()) for x in os.getenv("MAX_ADMIN_IDS", "0").split(",") if x.strip().isdigit()
 ]
 
+# ── Прокси (опционально) ──
+PROXY_URL: str = os.getenv("PROXY_URL", "")
+
 # ── База ──
 # По умолчанию — transfer_bot.db в корне проекта.
 # Можно переопределить абсолютным путём через DB_PATH в .env.

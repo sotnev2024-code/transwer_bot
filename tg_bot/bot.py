@@ -16,10 +16,11 @@ if str(_ROOT) not in sys.path:
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
+from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
 
-from shared.config import BOT_TOKEN
+from shared.config import BOT_TOKEN, PROXY_URL
 from shared.database import init_db
 from shared.settings_store import load_all_settings, maybe_refresh_cache
 from tg_bot.handlers import (
@@ -51,8 +52,10 @@ async def main() -> None:
     if not BOT_TOKEN:
         raise ValueError("BOT_TOKEN не задан в .env")
 
+    session = AiohttpSession(proxy=PROXY_URL) if PROXY_URL else None
     bot = Bot(
         token=BOT_TOKEN,
+        session=session,
         default=DefaultBotProperties(parse_mode=ParseMode.HTML),
     )
     dp = Dispatcher(storage=MemoryStorage())
