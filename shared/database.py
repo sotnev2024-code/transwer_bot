@@ -49,8 +49,6 @@ async def init_db() -> None:
             )
         """)
 
-        # ── Миграция существующих БД: добавить platform, если её нет ──
-        await _migrate_add_platform_column(db)
         await db.execute("""
             CREATE TABLE IF NOT EXISTS route_prices (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -106,6 +104,8 @@ async def init_db() -> None:
                 UNIQUE(chat_id, message_id)
             )
         """)
+        # ── Миграция существующих БД: добавить platform, если её нет ──
+        await _migrate_add_platform_column(db)
         await db.commit()
 
 
