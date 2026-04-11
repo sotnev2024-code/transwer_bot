@@ -1,7 +1,10 @@
+import logging
 import re
 from datetime import datetime, date as _date, timedelta
 
 from aiogram import Router, F, Bot
+
+logger = logging.getLogger(__name__)
 from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
 from aiogram.fsm.context import FSMContext
 from aiogram.filters import StateFilter
@@ -858,10 +861,15 @@ async def get_name(message: Message, state: FSMContext) -> None:
 
 @router.message(StateFilter(BookingStates.get_phone), F.contact)
 async def get_phone_from_contact(message: Message, state: FSMContext, bot: Bot) -> None:
-    phone = message.contact.phone_number
-    if not phone.startswith("+"):
-        phone = "+" + phone
-    await _finalize_booking(message, state, bot, phone)
+    logger.info("Contact received from user %s: %s", message.from_user.id, message.contact.phone_number)
+    try:
+        phone = message.contact.phone_number
+        if not phone.startswith("+"):
+            phone = "+" + phone
+        await _finalize_booking(message, state, bot, phone)
+    except Exception:
+        logger.exception("Error in get_phone_from_contact for user %s", message.from_user.id)
+        await message.answer("Произошла ошибка при оформлении заявки. Попробуйте ещё раз или введите номер вручную.")
 
 
 @router.message(StateFilter(BookingStates.get_phone))

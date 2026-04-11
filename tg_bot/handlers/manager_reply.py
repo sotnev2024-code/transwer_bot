@@ -51,7 +51,14 @@ async def on_manager_reply(message: Message, bot: Bot) -> None:
     link = await get_inbox_link(message.chat.id, src.message_id)
     if not link:
         # Это reply на наше сообщение, которое мы НЕ зарегистрировали
-        # как inbox-запись (например, обычное служебное сообщение). Игнорируем.
+        # как inbox-запись (например, обычное служебное сообщение).
+        try:
+            await message.reply(
+                "⚠️ Не могу связать этот ответ с клиентом — запись не найдена.\n"
+                "Возможно, это старая заявка. Свяжитесь с клиентом напрямую."
+            )
+        except Exception:
+            pass
         return
 
     # 4) Извлекаем текст ответа менеджера
