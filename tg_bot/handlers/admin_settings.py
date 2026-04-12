@@ -38,6 +38,21 @@ logger = logging.getLogger(__name__)
 ROUTES_PER_PAGE = 8
 
 
+def _parse_price(text: str | None) -> int | None:
+    """Парсит цену из текста: убирает пробелы, ₽, точки, запятые.
+    '5 000' → 5000, '5000₽' → 5000, '5.000' → 5000, '5,000' → 5000.
+    Возвращает None если не удалось распознать."""
+    if not text:
+        return None
+    cleaned = text.strip().replace(" ", "").replace("\xa0", "")
+    cleaned = cleaned.replace("₽", "").replace("руб", "").replace("р", "")
+    cleaned = cleaned.replace(".", "").replace(",", "")
+    if not cleaned.isdigit():
+        return None
+    val = int(cleaned)
+    return val if val > 0 else None
+
+
 def _is_admin(user_id: int) -> bool:
     return user_id in ADMIN_IDS
 
@@ -331,12 +346,9 @@ async def price_edit_receive(message: Message, state: FSMContext) -> None:
     if not key:
         await state.clear()
         return
-    try:
-        val = int(message.text.strip())
-        if val < 0:
-            raise ValueError
-    except (ValueError, AttributeError):
-        await message.answer("❌ Введите положительное целое число.")
+    val = _parse_price(message.text)
+    if val is None:
+        await message.answer("❌ Введите положительное целое число.\nПример: <b>5000</b> или <b>5 000</b>")
         return
     await settings_store.save_setting(key, str(val))
     await state.clear()
@@ -457,12 +469,9 @@ async def route_add_to(message: Message, state: FSMContext) -> None:
 async def route_add_price(message: Message, state: FSMContext) -> None:
     if not _is_admin(message.from_user.id):
         return
-    try:
-        price = int(message.text.strip())
-        if price <= 0:
-            raise ValueError
-    except (ValueError, AttributeError):
-        await message.answer("❌ Введите положительное целое число.")
+    price = _parse_price(message.text)
+    if price is None:
+        await message.answer("❌ Введите положительное целое число.\nПример: <b>5000</b> или <b>5 000</b>")
         return
     data = await state.get_data()
     await upsert_route(data["new_route_from"], data["new_route_to"], price)
@@ -502,19 +511,19 @@ async def route_edit_prompt(callback: CallbackQuery, state: FSMContext) -> None:
 async def route_edit_receive(message: Message, state: FSMContext) -> None:
     if not _is_admin(message.from_user.id):
         return
-    try:
-        price = int(message.text.strip())
-        if price <= 0:
-            raise ValueError
-    except (ValueError, AttributeError):
-        await message.answer("❌ Введите положительное целое число.")
+    price = _parse_price(message.text)
+    if price is None:
+        await message.answer("❌ Введите положительное целое число.\nПример: <b>5000</b> или <b>5 000</b>")
         return
     data = await state.get_data()
     route_id = data.get("editing_route_id")
     route = await get_route_by_id(route_id)
     if route:
         await upsert_route(route["from_city"], route["to_city"], price)
-    await export_prices_json()
+    try:
+        await export_prices_json()
+    except Exception as e:
+        logger.warning("export_prices_json failed: %s", e)
     await state.clear()
     await message.answer(f"✅ Цена маршрута обновлена: <b>{price:,} ₽</b>")
     await _show_routes_page(message, 0)
