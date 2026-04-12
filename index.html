@@ -1627,36 +1627,25 @@ document.querySelectorAll('a[href^="#"]').forEach(link => {
   <script>
   // Загружаем цены из prices.json (генерируется ботом при изменении маршрутов)
   (function () {
-    console.log('[prices] loading prices.json...');
     function fmt(n) {
       return n.toLocaleString('ru-RU') + '\u00a0\u20bd';
     }
     fetch('/prices.json?_=' + Date.now())
-      .then(function (r) {
-        console.log('[prices] fetch status:', r.status);
-        return r.ok ? r.json() : null;
-      })
+      .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (data) {
-        if (!data || !Array.isArray(data.routes)) {
-          console.warn('[prices] no data or invalid format', data);
-          return;
-        }
-        console.log('[prices] loaded', data.routes.length, 'routes');
+        if (!data || !Array.isArray(data.routes)) return;
         var map = {};
         data.routes.forEach(function (r) {
           map[r.from + '|' + r.to] = r.price;
         });
-        var els = document.querySelectorAll('[data-route-from][data-route-to]');
-        console.log('[prices] found', els.length, 'price elements');
-        els.forEach(function (el) {
+        document.querySelectorAll('[data-route-from][data-route-to]').forEach(function (el) {
           var key = el.getAttribute('data-route-from') + '|' + el.getAttribute('data-route-to');
           if (map[key] !== undefined) {
             el.innerHTML = '\u043e\u0442 <strong>' + fmt(map[key]) + '</strong>';
-            console.log('[prices] updated', key, '->', map[key]);
           }
         });
       })
-      .catch(function (err) { console.error('[prices] error:', err); });
+      .catch(function () {});
   })();
   </script>
 </body>
